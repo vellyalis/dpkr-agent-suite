@@ -4,6 +4,7 @@ param(
   [string]$UserHome=$env:USERPROFILE,
   [string]$FrontierLoopSource,
   [string]$NativeUiSource,
+  [switch]$SkipCodexCliRegistration,
   [switch]$ReplaceGlobalAgents,
   [switch]$WhatIf
 )
@@ -25,6 +26,25 @@ function WriteJson([string]$Path,$Value){
   [IO.Directory]::CreateDirectory([IO.Path]::GetDirectoryName($Path))|Out-Null
   $json=$Value|ConvertTo-Json -Depth 20
   [IO.File]::WriteAllText($Path,$json+"`n",[Text.UTF8Encoding]::new($false))
+}
+function CodexJson([string[]]$CodexArgs){
+  $command=Get-Command codex -ErrorAction SilentlyContinue
+  if(-not$command){throw 'Codex CLI is required for Codex plugin registration'}
+  $text=(& codex @CodexArgs 2>&1|Out-String).Trim()
+  if($LASTEXITCODE-ne0){throw "codex $($CodexArgs -join ' ') failed: $text"}
+  try{return $text|ConvertFrom-Json}catch{throw "Codex returned invalid JSON for '$($CodexArgs -join ' ')': $text"}
+}
+function EnsureCodexMarketplace([string]$MarketplaceRoot){
+  $catalog=CodexJson @('plugin','marketplace','list','--json')
+  $personal=@($catalog.marketplaces|Where-Object {$_.name-eq'personal'})
+  if($personal.Count-eq0){
+    [void](CodexJson @('plugin','marketplace','add',$MarketplaceRoot,'--json'))
+    $catalog=CodexJson @('plugin','marketplace','list','--json')
+    $personal=@($catalog.marketplaces|Where-Object {$_.name-eq'personal'})
+  }
+  if($personal.Count-ne1){throw "Codex must resolve exactly one personal marketplace; found $($personal.Count)"}
+  $root=Full ([string]$personal[0].root)
+  if(-not[string]::Equals($root,(Full $MarketplaceRoot),[StringComparison]::OrdinalIgnoreCase)){throw "Codex personal marketplace root mismatch: $root"}
 }
 function EnsureSource($Component,[string]$Override,[string]$PluginsRoot){
   if($Override){return Full $Override}
@@ -59,9 +79,8 @@ function AssertManifests($Component,[string]$Source){
   if($tadd.schemaVersion-ne1-or$tadd.name-ne$Component.name-or$tadd.version-ne$Component.version-or-not$tadd.enabled){throw "Taddkorro manifest mismatch: $($Component.name)"}
   if(@($tadd.skills).Count-ne1-or$tadd.skills[0]-ne'skills'){throw "Taddkorro Skill root mismatch: $($Component.name)"}
 }
-function MarketplaceEntry($Component,[string]$Source,[string]$MarketplaceFile){
-  $base=[IO.Path]::GetDirectoryName($MarketplaceFile)
-  $rel=[IO.Path]::GetRelativePath($base,$Source).Replace('\','/')
+function MarketplaceEntry($Component,[string]$Source,[string]$MarketplaceRoot){
+  $rel='./'+[IO.Path]::GetRelativePath($MarketplaceRoot,$Source).Replace('\','/')
   [ordered]@{
     name=[string]$Component.name
     source=[ordered]@{source='local';path=$rel}
@@ -124,7 +143,7 @@ try{
     $market=[pscustomobject]@{name='personal';interface=[pscustomobject]@{displayName='Personal Plugins'};plugins=@()}
   }
   $plugins=@($market.plugins|Where-Object {$_.name -notin @('frontier-loop','native-ui-governance')})
-  foreach($component in @($suite.components)){$plugins += MarketplaceEntry $component $resolved[[string]$component.name] $marketplace}
+  foreach($component in @($suite.components)){$plugins += MarketplaceEntry $component $resolved[[string]$component.name] $UserHome}
   $market.plugins=$plugins
   WriteJson $marketplace $market
 
@@ -146,10 +165,12 @@ try{
     if($LASTEXITCODE-ne0){throw "component installation failed: $($component.name)"}
   }
 
-  & (Join-Path $SuiteRoot 'scripts\Verify-DpkrAgentSuite.ps1') -SuiteRoot $SuiteRoot -UserHome $UserHome -FrontierLoopSource $resolved['frontier-loop'] -NativeUiSource $resolved['native-ui-governance'] | Out-Null
+  if(-not$SkipCodexCliRegistration){EnsureCodexMarketplace $UserHome}
+
+  & (Join-Path $SuiteRoot 'scripts\Verify-DpkrAgentSuite.ps1') -SuiteRoot $SuiteRoot -UserHome $UserHome -FrontierLoopSource $resolved['frontier-loop'] -NativeUiSource $resolved['native-ui-governance'] -SkipCodexCliRegistration:$SkipCodexCliRegistration | Out-Null
   if($LASTEXITCODE-ne0){throw 'suite verification failed'}
 
-  [ordered]@{success=$true;version=$suite.version;components=$resolved;globalAgents=$agentsTarget;globalAgentsBackup=$agentsBackup;marketplace=$marketplace;codexRegistered=$true;taddkorroRegistered=$true;skillCount=27}|ConvertTo-Json -Depth 8
+  [ordered]@{success=$true;version=$suite.version;components=$resolved;globalAgents=$agentsTarget;globalAgentsBackup=$agentsBackup;marketplace=$marketplace;codexPrepared=$true;codexRegistered=(-not$SkipCodexCliRegistration);taddkorroRegistered=$true;skillCount=27}|ConvertTo-Json -Depth 8
   exit 0
 }catch{
   if($agentsBackup-and(Test-Path -LiteralPath $agentsBackup)){Copy-Item -LiteralPath $agentsBackup -Destination $agentsTarget -Force}

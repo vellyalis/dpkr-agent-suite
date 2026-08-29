@@ -1,4 +1,5 @@
 .suite-staging-*/
+.codex-cli-smoke/
 *.backup-*
 *.tmp
 *.log

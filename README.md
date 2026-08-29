@@ -1,6 +1,6 @@
 # DPKR Agent Suite
 
-Current bundle: **1.0.2** (`FrontierLoop 0.8.1` + `Native UI Governance 1.0.3`).
+Current bundle: **1.0.3** (`FrontierLoop 0.8.2` + `Native UI Governance 1.0.4`).
 
 The paired distribution for **FrontierLoop + Native UI Governance + the matching
 global `AGENTS.md`**. The three parts are intentionally installed together:
@@ -18,7 +18,7 @@ updates, and verifies them as one bundle.
 
 ## Windows quick install
 
-Requirements: Git and PowerShell 7+.
+Requirements: Git, PowerShell 7+, and Codex CLI when Codex registration is desired. The normal installer verifies Codex itself; Taddkorro uses the same materialized Skill bodies.
 
 ```powershell
 git clone https://github.com/vellyalis/dpkr-agent-suite.git "$env:USERPROFILE\plugins\dpkr-agent-suite"
@@ -64,8 +64,10 @@ The prior file is copied to a timestamped backup before replacement.
 ```
 
 The verifier checks both component verifiers, Codex and Taddkorro manifests,
-marketplace ownership, the exact global `AGENTS.md`, all materialized Skills, and
-the versioned caches.
+marketplace ownership, the exact global `AGENTS.md`, all materialized Skills,
+the versioned caches, and Codex CLI's own `plugin marketplace/list` runtime
+state. A marketplace file that exists but is not actually recognized by Codex
+does not pass.
 
 ## Update
 

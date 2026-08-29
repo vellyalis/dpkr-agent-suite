@@ -1,14 +1,14 @@
 {
   "schemaVersion": 1,
   "name": "dpkr-agent-suite",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "components": [
     {
       "name": "frontier-loop",
       "directory": "frontier-loop",
       "repository": "https://github.com/vellyalis/FrontierLoop.git",
-      "ref": "v0.8.1",
-      "version": "0.8.1",
+      "ref": "v0.8.2",
+      "version": "0.8.2",
       "codexManifest": ".codex-plugin/plugin.json",
       "taddkorroManifest": "taddkorro.plugin.json",
       "verifier": "scripts/Verify-FrontierLoop.ps1",
@@ -19,8 +19,8 @@
       "name": "native-ui-governance",
       "directory": "native-ui-governance",
       "repository": "https://github.com/vellyalis/native-ui-governance.git",
-      "ref": "v1.0.3",
-      "version": "1.0.3",
+      "ref": "v1.0.4",
+      "version": "1.0.4",
       "codexManifest": ".codex-plugin/plugin.json",
       "taddkorroManifest": "taddkorro.plugin.json",
       "verifier": "scripts/Verify-NativeUiGovernance.ps1",

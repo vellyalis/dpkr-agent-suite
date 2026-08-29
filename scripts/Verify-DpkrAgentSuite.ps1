@@ -3,12 +3,20 @@ param(
   [string]$SuiteRoot=(Split-Path $PSScriptRoot -Parent),
   [string]$UserHome=$env:USERPROFILE,
   [string]$FrontierLoopSource,
-  [string]$NativeUiSource
+  [string]$NativeUiSource,
+  [switch]$SkipCodexCliRegistration
 )
 $ErrorActionPreference='Stop'
 Set-StrictMode -Version Latest
 function Full([string]$Path){[IO.Path]::GetFullPath($Path).TrimEnd([char[]]'\/')}
 function ReadJson([string]$Path){Get-Content -LiteralPath $Path -Raw|ConvertFrom-Json}
+function CodexJson([string[]]$CodexArgs){
+  $command=Get-Command codex -ErrorAction SilentlyContinue
+  if(-not$command){throw 'Codex CLI is required for Codex plugin verification'}
+  $text=(& codex @CodexArgs 2>&1|Out-String).Trim()
+  if($LASTEXITCODE-ne0){throw "codex $($CodexArgs -join ' ') failed: $text"}
+  try{return $text|ConvertFrom-Json}catch{throw "Codex returned invalid JSON for '$($CodexArgs -join ' ')': $text"}
+}
 function Excluded([string]$Rel){
   $p=$Rel.Replace('\','/').ToLowerInvariant()
   return $p-eq'.git' -or
@@ -58,7 +66,8 @@ foreach($component in @($suite.components)){
 
   $entries=@($market.plugins|Where-Object name -eq $name)
   if($entries.Count-ne1-or$entries[0].source.source-ne'local'-or$entries[0].policy.installation-ne'INSTALLED_BY_DEFAULT'){throw "Codex marketplace registration mismatch: $name"}
-  $marketSource=Full (Join-Path ([IO.Path]::GetDirectoryName($marketplace)) ([string]$entries[0].source.path))
+  $declared=[string]$entries[0].source.path
+  $marketSource=if([IO.Path]::IsPathRooted($declared)){Full $declared}else{Full (Join-Path $UserHome $declared)}
   if(-not[string]::Equals($marketSource,$src,[StringComparison]::OrdinalIgnoreCase)){throw "Codex marketplace source is not canonical: $name"}
 
   $cache=Join-Path $UserHome ('.codex\plugins\cache\personal\'+[string]$component.cacheDirectory+'\'+[string]$component.version)
@@ -76,7 +85,23 @@ foreach($component in @($suite.components)){
 }
 if(@($allSkills|Sort-Object -Unique).Count-ne27){throw "expected 27 unique suite Skills, got $(@($allSkills|Sort-Object -Unique).Count)"}
 
+if(-not$SkipCodexCliRegistration){
+  $marketCatalog=CodexJson @('plugin','marketplace','list','--json')
+  $personal=@($marketCatalog.marketplaces|Where-Object {$_.name-eq'personal'})
+  if($personal.Count-ne1-or-not[string]::Equals((Full ([string]$personal[0].root)),$UserHome,[StringComparison]::OrdinalIgnoreCase)){throw 'Codex personal marketplace runtime registration mismatch'}
+  $pluginCatalog=CodexJson @('plugin','list','--marketplace','personal','--available','--json')
+  foreach($component in @($suite.components)){
+    $name=[string]$component.name
+    $rows=@($pluginCatalog.installed|Where-Object {$_.name-eq$name})
+    if($rows.Count-ne1){throw "Codex runtime plugin missing: $name"}
+    $row=$rows[0]
+    if(-not$row.installed-or-not$row.enabled-or[string]$row.version-ne[string]$component.version){throw "Codex runtime plugin state mismatch: $name"}
+    $runtimeSource=Full ([string]$row.source.path)
+    if(-not[string]::Equals($runtimeSource,$sources[$name],[StringComparison]::OrdinalIgnoreCase)){throw "Codex runtime plugin source mismatch: $name -> $runtimeSource"}
+  }
+}
+
 $frontierVersion=[string](@($suite.components|Where-Object {$_.name-eq'frontier-loop'})[0].version)
 $nativeUiVersion=[string](@($suite.components|Where-Object {$_.name-eq'native-ui-governance'})[0].version)
-[ordered]@{success=$true;version=$suite.version;codexRegistered=$true;taddkorroRegistered=$true;globalAgentsMatched=$true;skillCount=27;frontierLoopVersion=$frontierVersion;nativeUiVersion=$nativeUiVersion}|ConvertTo-Json -Compress
+[ordered]@{success=$true;version=$suite.version;codexPrepared=$true;codexRegistered=(-not$SkipCodexCliRegistration);taddkorroRegistered=$true;globalAgentsMatched=$true;skillCount=27;frontierLoopVersion=$frontierVersion;nativeUiVersion=$nativeUiVersion}|ConvertTo-Json -Compress
 exit 0
