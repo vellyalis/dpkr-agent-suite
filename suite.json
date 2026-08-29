@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "name": "dpkr-agent-suite",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "components": [
     {
       "name": "frontier-loop",

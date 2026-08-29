@@ -76,5 +76,7 @@ foreach($component in @($suite.components)){
 }
 if(@($allSkills|Sort-Object -Unique).Count-ne27){throw "expected 27 unique suite Skills, got $(@($allSkills|Sort-Object -Unique).Count)"}
 
-[ordered]@{success=$true;version=$suite.version;codexRegistered=$true;taddkorroRegistered=$true;globalAgentsMatched=$true;skillCount=27;frontierLoopVersion='0.8.0';nativeUiVersion='1.0.2'}|ConvertTo-Json -Compress
+$frontierVersion=[string](@($suite.components|Where-Object {$_.name-eq'frontier-loop'})[0].version)
+$nativeUiVersion=[string](@($suite.components|Where-Object {$_.name-eq'native-ui-governance'})[0].version)
+[ordered]@{success=$true;version=$suite.version;codexRegistered=$true;taddkorroRegistered=$true;globalAgentsMatched=$true;skillCount=27;frontierLoopVersion=$frontierVersion;nativeUiVersion=$nativeUiVersion}|ConvertTo-Json -Compress
 exit 0
