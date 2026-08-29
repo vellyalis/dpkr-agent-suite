@@ -1,0 +1,37 @@
+{
+  "schemaVersion": 1,
+  "name": "dpkr-agent-suite",
+  "version": "1.0.0",
+  "components": [
+    {
+      "name": "frontier-loop",
+      "directory": "frontier-loop",
+      "repository": "https://github.com/vellyalis/FrontierLoop.git",
+      "ref": "v0.8.0",
+      "version": "0.8.0",
+      "codexManifest": ".codex-plugin/plugin.json",
+      "taddkorroManifest": "taddkorro.plugin.json",
+      "verifier": "scripts/Verify-FrontierLoop.ps1",
+      "installer": "scripts/Install-FrontierLoop.ps1",
+      "cacheDirectory": "frontier-loop"
+    },
+    {
+      "name": "native-ui-governance",
+      "directory": "native-ui-governance",
+      "repository": "https://github.com/vellyalis/native-ui-governance.git",
+      "ref": "v1.0.2",
+      "version": "1.0.2",
+      "codexManifest": ".codex-plugin/plugin.json",
+      "taddkorroManifest": "taddkorro.plugin.json",
+      "verifier": "scripts/Verify-NativeUiGovernance.ps1",
+      "installer": "scripts/Install-NativeUiGovernance.ps1",
+      "cacheDirectory": "native-ui-governance"
+    }
+  ],
+  "globalAgents": {
+    "source": "payload/AGENTS.md",
+    "target": ".codex/AGENTS.md"
+  },
+  "codexMarketplace": ".agents/plugins/marketplace.json",
+  "sharedSkillRoot": ".agents/skills"
+}
