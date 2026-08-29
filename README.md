@@ -1,5 +1,7 @@
 # DPKR Agent Suite
 
+Current bundle: **1.0.1** (`FrontierLoop 0.8.1` + `Native UI Governance 1.0.3`).
+
 The paired distribution for **FrontierLoop + Native UI Governance + the matching
 global `AGENTS.md`**. The three parts are intentionally installed together:
 

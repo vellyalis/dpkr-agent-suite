@@ -11,7 +11,9 @@ function Full([string]$Path){[IO.Path]::GetFullPath($Path).TrimEnd([char[]]'\/')
 function ReadJson([string]$Path){Get-Content -LiteralPath $Path -Raw|ConvertFrom-Json}
 function Excluded([string]$Rel){
   $p=$Rel.Replace('\','/').ToLowerInvariant()
-  return $p.StartsWith('evaluation/results/') -or
+  return $p-eq'.git' -or
+    $p.StartsWith('.git/') -or
+    $p.StartsWith('evaluation/results/') -or
     $p.Contains('/__pycache__/') -or
     $p.EndsWith('.pyc') -or
     $p.Contains('/.frontier-loop-') -or
