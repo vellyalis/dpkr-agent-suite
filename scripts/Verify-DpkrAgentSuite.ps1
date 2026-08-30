@@ -21,6 +21,8 @@ function Excluded([string]$Rel){
   $p=$Rel.Replace('\','/').ToLowerInvariant()
   return $p-eq'.git' -or
     $p.StartsWith('.git/') -or
+    $p-eq'provenance' -or
+    $p.StartsWith('provenance/') -or
     $p.StartsWith('evaluation/results/') -or
     $p.Contains('/__pycache__/') -or
     $p.EndsWith('.pyc') -or
