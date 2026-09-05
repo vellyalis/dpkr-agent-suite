@@ -3,8 +3,8 @@
 > **強いAIに、ただコードを書かせるな。**
 > **設計・責任分離・検証・UI品質まで、ちゃんと仕事をさせろ。**
 
-Current bundle: **1.0.5**
-`FrontierLoop 0.8.4` + `Native UI Governance 1.0.5` + bundled global `AGENTS.md`
+Current bundle: **1.0.6**
+`FrontierLoop 0.8.5` + `Native UI Governance 1.0.6` + bundled global `AGENTS.md`
 
 DPKR Agent Suite は、Codex / Taddkorro で使うための **AI開発ガバナンス + Engineering Skill + Native UI Skill の統合セット**です。
 

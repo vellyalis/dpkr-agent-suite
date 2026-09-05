@@ -63,7 +63,11 @@ foreach($component in @($suite.components)){
   $tadd=ReadJson (Join-Path $src ([string]$component.taddkorroManifest))
   if($codex.name-ne$name-or$codex.version-ne$component.version){throw "Codex registration mismatch: $name"}
   if($tadd.schemaVersion-ne1-or$tadd.name-ne$name-or$tadd.version-ne$component.version-or-not$tadd.enabled-or@($tadd.skills).Count-ne1-or$tadd.skills[0]-ne'skills'){throw "Taddkorro registration mismatch: $name"}
-  & (Join-Path $src ([string]$component.verifier)) -Root $src | Out-Null
+  if($name-eq'frontier-loop'){
+    & (Join-Path $src ([string]$component.verifier)) -Root $src -InstalledSkillRoot $skillsRoot | Out-Null
+  }else{
+    & (Join-Path $src ([string]$component.verifier)) -Root $src | Out-Null
+  }
   if($LASTEXITCODE-ne0){throw "component verifier failed: $name"}
 
   $entries=@($market.plugins|Where-Object name -eq $name)
